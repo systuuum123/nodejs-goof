@@ -4,7 +4,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4  # Updated to use Node.js 20
 
       - name: Set up JQ
         run: sudo apt-get install jq -y
@@ -20,6 +21,8 @@ jobs:
       - name: Run vulnerability analysis script
         run: |
           #!/bin/bash
+
+          set -e  # Exit immediately if a command exits with a non-zero status
 
           # Define the SARIF file
           sarif_file="snyk.sarif"
