@@ -18,9 +18,9 @@ jobs:
       - name: Run Snyk Test
         run: |
           echo "Running Snyk test..."
-          snyk test --sarif-file-output=.github/workflows/snyk1.sarif || true
+          snyk test --sarif-file-output=.github/workflows/snyk.sarif || true
           echo "Snyk test completed."
-          if [ -f .github/workflows/snyk1.sarif ]; then
+          if [ -f .github/workflows/snyk.sarif ]; then
             echo "SARIF file created successfully."
           else
             echo "SARIF file not found."
@@ -30,15 +30,4 @@ jobs:
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: .github/workflows/snyk1.sarif
-
-      - name: Commit SARIF file
-        if: success()
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/snyk1.sarif
-          git commit -m 'Add Snyk SARIF report'
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sarif_file: .github/workflows/snyk.sarif
