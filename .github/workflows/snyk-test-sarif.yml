@@ -20,7 +20,11 @@ jobs:
           echo "Running Snyk test..."
           snyk test --sarif-file-output=snyk1.sarif || true
           echo "Snyk test completed."
-          cat snyk1.sarif || echo "SARIF file not found."
+          if [ -f snyk1.sarif ]; then
+            echo "SARIF file created successfully."
+          else
+            echo "SARIF file not found."
+          fi
         continue-on-error: true
 
       - name: Upload SARIF file
