@@ -1,5 +1,6 @@
 name: "snyk test"
 on: push
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -129,28 +130,38 @@ jobs:
           done
 
           # Move the temporary JSON to the output file in .github/data
-          mv "$temp_json" ".github/data/$output_json"
+          mv "$temp_json" ".github/data/vulnerability_report_${timestamp}.json"
 
           # Create the summary report in text format
-          high_count=$(jq '[.[] | select(.severity == "High")] | length' ".github/data/$output_json")
-          medium_count=$(jq '[.[] | select(.severity == "Medium")] | length' ".github/data/$output_json")
-          low_count=$(jq '[.[] | select(.severity == "Low")] | length' ".github/data/$output_json")
+          high_count=$(jq '[.[] | select(.severity == "High")] | length' ".github/data/vulnerability_report_${timestamp}.json")
+          medium_count=$(jq '[.[] | select(.severity == "Medium")] | length' ".github/data/vulnerability_report_${timestamp}.json")
+          low_count=$(jq '[.[] | select(.severity == "Low")] | length' ".github/data/vulnerability_report_${timestamp}.json")
 
           summary_file=".github/data/vulnerability_summary_${timestamp}.txt"
           {
             echo "Total Vulnerabilities: $((high_count + medium_count + low_count))"
             echo "High: $high_count"
-            jq -r '.[] | select(.severity == "High") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
+            jq -r '.[] | select(.severity == "High") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/vulnerability_report_${timestamp}.json"
             echo "Medium: $medium_count"
-            jq -r '.[] | select(.severity == "Medium") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
+            jq -r '.[] | select(.severity == "Medium") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/vulnerability_report_${timestamp}.json"
             echo "Low: $low_count"
-            jq -r '.[] | select(.severity == "Low") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
+            jq -r '.[] | select(.severity == "Low") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/vulnerability_report_${timestamp}.json"
           } > "$summary_file"
 
           # Print the file location and names
           echo ".github/data/"
-          echo "$output_json"
+          echo "vulnerability_report_${timestamp}.json"
           echo "$summary_file"
 
           # Print the name of the latest file checked
           echo "Latest file checked for age calculation: $latest_file"
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions"
+          git add .github/data/vulnerability_report_*.json .github/data/vulnerability_summary_*.txt
+          git commit -m "Add Snyk vulnerability reports"
+          git push
+        env:
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
