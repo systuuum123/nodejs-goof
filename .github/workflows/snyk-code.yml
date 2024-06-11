@@ -14,11 +14,17 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      - name: Output Snyk Version
+        run: snyk --version
+
       - name: Snyk Test
-        run: snyk code test --org=${{ secrets.SNYK_ORG }} --sarif > snyk.sarif
+        run: |
+          echo "SNYK_ORG: ${{ secrets.SNYK_ORG }}"
+          snyk code test --org=${{ secrets.SNYK_ORG }} --sarif > snyk.sarif
         continue-on-error: true
 
       - name: Run vulnerability analysis script
+        if: success()
         run: |
           #!/bin/bash
 
