@@ -20,7 +20,9 @@ jobs:
       - name: Snyk Test
         run: |
           echo "SNYK_ORG: ${{ secrets.SNYK_ORG }}"
-          snyk code test --org=${{ secrets.SNYK_ORG }} --sarif > snyk.sarif
+          snyk code test --org=${{ secrets.SNYK_ORG }} --sarif > snyk.sarif 2> snyk_error.log
+          cat snyk.sarif
+          cat snyk_error.log
         continue-on-error: true
 
       - name: Run vulnerability analysis script
