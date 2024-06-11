@@ -31,6 +31,9 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Set execute permission for snyk-parse.sh
+        run: chmod +x .github/workflows/snyk-parse.sh
+
       - name: Process SARIF File
         run: .github/workflows/snyk-parse.sh
 
