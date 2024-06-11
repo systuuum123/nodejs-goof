@@ -35,15 +35,15 @@ jobs:
 
           # Generate the timestamp for the filename
           timestamp=$(date +"%Y%m%d_%H%M%S")
-          output_json="vulnerability_report_${timestamp}.json"
+          output_json=".github/data/vulnerability_report_${timestamp}.json"
 
-          # Check if ../data folder exists, if not create it
-          if [ ! -d "../data" ]; then
-            mkdir -p ../data
+          # Check if .github/data folder exists, if not create it
+          if [ ! -d ".github/data" ]; then
+            mkdir -p .github/data
           fi
 
-          # Find the latest file in the ../data directory
-          latest_file=$(ls -t ../data/vulnerability_report_*.json 2>/dev/null | head -n 1)
+          # Find the latest file in the .github/data directory
+          latest_file=$(ls -t .github/data/vulnerability_report_*.json 2>/dev/null | head -n 1)
 
           # Print the name of the latest file that will be used for age calculation
           echo "Latest file to be used for age calculation: $latest_file"
@@ -63,7 +63,7 @@ jobs:
           declare -A severity_mapping
           severity_mapping=( ["error"]="High" ["warning"]="Medium" ["note"]="Low" )
 
-          # Function to calculate age of a vulnerability based on previous files in ../data
+          # Function to calculate age of a vulnerability based on previous files in .github/data
           calculate_age_and_timestamp() {
             local description="$1"
             local uri="$2"
@@ -126,27 +126,27 @@ jobs:
             done
           done
 
-          # Move the temporary JSON to the output file in ../data
-          mv "$temp_json" "../data/$output_json"
+          # Move the temporary JSON to the output file in .github/data
+          mv "$temp_json" ".github/data/$output_json"
 
           # Create the summary report in text format
-          high_count=$(jq '[.[] | select(.severity == "High")] | length' "../data/$output_json")
-          medium_count=$(jq '[.[] | select(.severity == "Medium")] | length' "../data/$output_json")
-          low_count=$(jq '[.[] | select(.severity == "Low")] | length' "../data/$output_json")
+          high_count=$(jq '[.[] | select(.severity == "High")] | length' ".github/data/$output_json")
+          medium_count=$(jq '[.[] | select(.severity == "Medium")] | length' ".github/data/$output_json")
+          low_count=$(jq '[.[] | select(.severity == "Low")] | length' ".github/data/$output_json")
 
-          summary_file="../data/vulnerability_summary_${timestamp}.txt"
+          summary_file=".github/data/vulnerability_summary_${timestamp}.txt"
           {
             echo "Total Vulnerabilities: $((high_count + medium_count + low_count))"
             echo "High: $high_count"
-            jq -r '.[] | select(.severity == "High") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' "../data/$output_json"
+            jq -r '.[] | select(.severity == "High") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
             echo "Medium: $medium_count"
-            jq -r '.[] | select(.severity == "Medium") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' "../data/$output_json"
+            jq -r '.[] | select(.severity == "Medium") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
             echo "Low: $low_count"
-            jq -r '.[] | select(.severity == "Low") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' "../data/$output_json"
+            jq -r '.[] | select(.severity == "Low") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' ".github/data/$output_json"
           } > "$summary_file"
 
           # Print the file location and names
-          echo "../data/"
+          echo ".github/data/"
           echo "$output_json"
           echo "$summary_file"
 
