@@ -1,21 +1,26 @@
 #!/bin/bash
 
+echo "Starting SARIF processing script..."
+
 # Define the SARIF file
 sarif_file=".github/workflows/snyk.sarif"
+echo "SARIF file: $sarif_file"
 
 # Generate the timestamp for the filename
 timestamp=$(date +"%Y%m%d_%H%M%S")
 output_json=".github/data/vulnerability_report_${timestamp}.json"
+echo "Output JSON: $output_json"
 
 # Check if .github/data folder exists, if not create it
 if [ ! -d ".github/data" ]; then
   mkdir -p .github/data
+  echo "Created directory .github/data"
+else
+  echo "Directory .github/data already exists"
 fi
 
 # Find the latest file in the .github/data directory
 latest_file=$(ls -t .github/data/vulnerability_report_*.json 2>/dev/null | head -n 1)
-
-# Print the name of the latest file that will be used for age calculation
 echo "Latest file to be used for age calculation: $latest_file"
 
 # Retrieve the descriptions and levels dynamically and store them in arrays
@@ -24,10 +29,12 @@ levels=()
 while IFS= read -r line; do
   descriptions+=("$line")
 done < <(jq -r '.runs[].tool.driver.rules[].shortDescription.text' "$sarif_file")
+echo "Descriptions retrieved: ${#descriptions[@]}"
 
 while IFS= read -r line; do
   levels+=("$line")
 done < <(jq -r '.runs[].tool.driver.rules[].defaultConfiguration.level' "$sarif_file")
+echo "Levels retrieved: ${#levels[@]}"
 
 # Define the severity mapping
 declare -A severity_mapping
@@ -72,6 +79,7 @@ calculate_age_and_timestamp() {
 # Initialize a temporary file to hold JSON objects
 temp_json="temp.json"
 echo "[]" > "$temp_json"
+echo "Initialized temporary JSON file: $temp_json"
 
 # Extract the required fields and store in the JSON array
 for index in "${!descriptions[@]}"; do
@@ -80,6 +88,8 @@ for index in "${!descriptions[@]}"; do
   vulnerabilities=$(jq --arg index "$index" --arg desc "${descriptions[$index]}" --arg severity "$severity" --arg timestamp "$timestamp" -r \
     '.runs[].results[] | select(.ruleIndex == ($index|tonumber)) | {index: $index|tonumber, shortDescription: $desc, artifactLocationUri: .locations[].physicalLocation.artifactLocation.uri, startLine: .locations[].physicalLocation.region.startLine, severity: $severity, timestamp: $timestamp}' \
     "$sarif_file")
+
+  echo "Vulnerabilities for rule index $index: $vulnerabilities"
 
   echo "$vulnerabilities" | jq -c '.' | while IFS= read -r vulnerability; do
     description=$(echo "$vulnerability" | jq -r '.shortDescription')
@@ -98,6 +108,7 @@ done
 
 # Move the temporary JSON to the output file in .github/data
 mv "$temp_json" "$output_json"
+echo "Moved temporary JSON to $output_json"
 
 # Create the summary report in text format
 high_count=$(jq '[.[] | select(.severity == "High")] | length' "$output_json")
@@ -114,6 +125,8 @@ summary_file=".github/data/vulnerability_summary_${timestamp}.txt"
   echo "Low: $low_count"
   jq -r '.[] | select(.severity == "Low") | "\(.shortDescription), Path: \(.artifactLocationUri), Line: \(.startLine), Age: \(.age) days"' "$output_json"
 } > "$summary_file"
+
+echo "Created summary file: $summary_file"
 
 # Print the file location and names
 echo ".github/data/"
