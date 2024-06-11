@@ -21,7 +21,7 @@ jobs:
           snyk test --sarif-file-output=.github/workflows/snyk.sarif || true
           echo "Snyk test completed."
           if [ -f .github/workflows/snyk.sarif ]; then
-            echo "SARIF file created successfully."
+            echo "SARIF file created successfully in .github/workflows/"
           else
             echo "SARIF file not found."
           fi
